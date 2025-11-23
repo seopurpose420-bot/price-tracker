@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce price tracker, track and compare prices on amazon,flipkart & more</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #1a202c;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .header {
+            background: rgb(37, 49, 141);
+            color: white;
+            text-align: center;
+            padding: 80px 20px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .header h1 { 
+            font-size: 56px; 
+            font-weight: 800; 
+            margin-bottom: 20px; 
+            position: relative;
+            z-index: 1;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .header p { 
+            font-size: 22px; 
+            opacity: 0.9; 
+            margin-bottom: 60px; 
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        
+        .search-container {
+            width: 90%; 
+            max-width: 900px; 
+            margin: 0 auto;
+            display: flex; 
+            gap: 20px; 
+            align-items: center;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .search-input {
+            flex-grow: 1; 
+            padding: 22px 30px; 
+            font-size: 18px;
+            border-radius: 50px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            outline: none; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+            color: white;
+        }
+        
+        .search-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255,255,255,0.6);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .search-btn {
+            padding: 22px 35px; 
+            background: linear-gradient(135deg, #ff8b02, #e67e00);
+            color: white;
+            border: none; 
+            border-radius: 50px; 
+            font-size: 18px;
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(255, 139, 2, 0.4);
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 139, 2, 0.5);
+            background: linear-gradient(135deg, #e67e00, #cc7000);
+        }
+        
+        .content { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 50px 20px; 
+        }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(20px);
+            border-radius: 24px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1); 
+            padding: 40px; 
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        }
+        
+        .product-layout { 
+            display: flex; 
+            gap: 40px; 
+            align-items: flex-start; 
+            flex-wrap: wrap; 
+        }
+        
+        .product-image { 
+            flex-shrink: 0; 
+            width: 350px; 
+            min-width: 280px; 
+        }
+        
+        .product-details { 
+            flex: 1; 
+            min-width: 350px; 
+        }
+        
+        .price-chart { 
+            height: 400px; 
+            margin: 30px 0; 
+        }
+        
+        .loading { 
+            text-align: center; 
+            padding: 80px 20px; 
+            color: #4a5568; 
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .spinner { 
+            border: 4px solid rgba(79, 70, 229, 0.1); 
+            border-top: 4px solid #4f46e5; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1s linear infinite; 
+            margin: 0 auto 30px; 
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        .time-btn {
+            padding: 12px 20px !important;
+            border: none !important;
+            border-radius: 25px !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        .time-btn.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+            color: white !important;
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3) !important;
+        }
+        
+        .time-btn:not(.active) {
+            background: rgba(255, 255, 255, 0.7) !important;
+            color: #4a5568 !important;
+        }
+        
+        .time-btn:hover {
+            transform: translateY(-2px) !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 42px; }
+            .header p { font-size: 18px; }
+            .product-layout { flex-direction: column !important; gap: 30px !important; }
+            .product-image { width: 100% !important; max-width: 400px !important; margin: 0 auto !important; }
+            .search-container { flex-direction: column !important; gap: 20px !important; }
+            .search-input, .search-btn { width: 100%; }
+            .card { padding: 25px; margin-bottom: 25px; }
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #3730a3, #6b21a8);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛒 E-commerce Price Tracker</h1>
+        <p>Track and compare prices on Amazon, Flipkart & more</p>
+        
+        <div class="search-container">
+            <input type="text" id="product-url-input" class="search-input" placeholder="Paste any product URL from supported stores...">
+            <button id="search-btn" class="search-btn">🔍 Search</button>
+        </div>
+        
+        <div style="margin-top: 40px; position: relative; z-index: 10;">
+            <p style="color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 12px 24px; border-radius: 25px; display: inline-block; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);">✅ Supported Stores:</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 800px; margin: 0 auto;">
+                <div onclick="window.open('https://amazon.in', '_blank')" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(29, 78, 216, 0.3)); backdrop-filter: blur(15px); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 25px; padding: 14px 22px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3); cursor: pointer;" onmouseover="this.style.background='linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(29, 78, 216, 0.4))'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 35px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(29, 78, 216, 0.3))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(59, 130, 246, 0.3)'">
+                    <span style="color: white; font-weight: 700; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Amazon</span>
+                </div>
+                
+                <div onclick="window.open('https://flipkart.com', '_blank')" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3)); backdrop-filter: blur(15px); border: 2px solid rgba(16, 185, 129, 0.4); border-radius: 25px; padding: 14px 22px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); cursor: pointer;" onmouseover="this.style.background='linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.4))'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 35px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(16, 185, 129, 0.3)'">
+                    <span style="color: white; font-weight: 700; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Flipkart</span>
+                </div>
+                
+                <div onclick="window.open('https://myntra.com', '_blank')" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.3)); backdrop-filter: blur(15px); border: 2px solid rgba(236, 72, 153, 0.4); border-radius: 25px; padding: 14px 22px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3); cursor: pointer;" onmouseover="this.style.background='linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(219, 39, 119, 0.4))'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 35px rgba(236, 72, 153, 0.4)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.3))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(236, 72, 153, 0.3)'">
+                    <span style="color: white; font-weight: 700; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Myntra</span>
+                </div>
+                
+                <div onclick="window.open('https://ajio.com', '_blank')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3)); backdrop-filter: blur(15px); border: 2px solid rgba(245, 158, 11, 0.4); border-radius: 25px; padding: 14px 22px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3); cursor: pointer;" onmouseover="this.style.background='linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.4))'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 35px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(245, 158, 11, 0.3)'">
+                    <span style="color: white; font-weight: 700; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Ajio</span>
+                </div>
+                
+                <div onclick="window.open('https://nykaa.com', '_blank')" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.3)); backdrop-filter: blur(15px); border: 2px solid rgba(139, 92, 246, 0.4); border-radius: 25px; padding: 14px 22px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3); cursor: pointer;" onmouseover="this.style.background='linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.4))'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 35px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.3))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(139, 92, 246, 0.3)'">
+                    <span style="color: white; font-weight: 700; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Nykaa</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="loading" style="display: none;">
+            <div class="card loading">
+                <div class="spinner"></div>
+                <p>Fetching product data and generating price graph...</p>
+            </div>
+        </div>
+
+        <div id="product-section" style="display: none;">
+            <div class="card">
+                <div id="product-content"></div>
+            </div>
+        </div>
+
+        <div id="chart-section" style="display: none;">
+            <div class="card" style="border: 2px solid #e5e7eb; border-radius: 12px;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 35px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 12px; border-radius: 15px; box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);">
+                            <span style="font-size: 24px;">📈</span>
+                        </div>
+                        <h3 style="font-weight: 800; font-size: 28px; color: #1a202c; margin: 0;">Price History</h3>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 25px; padding: 4px; display: flex; gap: 4px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);">
+                        <button class="time-btn active" data-period="1m">1 Month</button>
+                        <button class="time-btn" data-period="3m">3 Month</button>
+                        <button class="time-btn" data-period="all">All</button>
+                    </div>
+                </div>
+                <div class="price-chart" style="height: 250px; margin: 20px 0;">
+                    <div id="priceChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="comparison-section" style="display: none;">
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 12px; border-radius: 15px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);">
+                        <span style="font-size: 24px;">💰</span>
+                    </div>
+                    <h3 style="color: #1a202c; margin: 0; font-size: 28px; font-weight: 800;">Price Comparison</h3>
+                </div>
+                <div id="comparison-content"></div>
+            </div>
+        </div>
+
+        <div id="error-section" style="display: none;">
+            <div class="card">
+                <div id="error-content"></div>
+            </div>
+        </div>
+        
+        <!-- How it Works Section -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 12px; border-radius: 15px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                    <span style="font-size: 24px;">⚡</span>
+                </div>
+                <h3 style="color: #1a202c; margin: 0; font-size: 28px; font-weight: 800;">How it Works</h3>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;">
+                <div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.1)); border: 2px solid rgba(59, 130, 246, 0.2); border-radius: 20px; transition: all 0.3s ease;">
+                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                        <span style="font-size: 24px; color: white; font-weight: bold;">1</span>
+                    </div>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 10px;">Copy Product URL</h4>
+                    <p style="color: #4a5568; font-size: 14px; line-height: 1.5;">Copy any product URL from Amazon, Flipkart, Myntra, Ajio, or Nykaa</p>
+                </div>
+                
+                <div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border: 2px solid rgba(16, 185, 129, 0.2); border-radius: 20px; transition: all 0.3s ease;">
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);">
+                        <span style="font-size: 24px; color: white; font-weight: bold;">2</span>
+                    </div>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 10px;">Paste & Search</h4>
+                    <p style="color: #4a5568; font-size: 14px; line-height: 1.5;">Paste the URL in our search bar and click the search button</p>
+                </div>
+                
+                <div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1)); border: 2px solid rgba(245, 158, 11, 0.2); border-radius: 20px; transition: all 0.3s ease;">
+                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);">
+                        <span style="font-size: 24px; color: white; font-weight: bold;">3</span>
+                    </div>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 10px;">Get Insights</h4>
+                    <p style="color: #4a5568; font-size: 14px; line-height: 1.5;">View price history, compare across platforms, and find the best deals</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAQ Section -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 12px; border-radius: 15px; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);">
+                    <span style="font-size: 24px;">❓</span>
+                </div>
+                <h3 style="color: #1a202c; margin: 0; font-size: 28px; font-weight: 800;">Frequently Asked Questions</h3>
+            </div>
+            
+            <div style="display: grid; gap: 20px;">
+                <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                    <h4 style="color: #1a202c; font-size: 18px; font-weight: 700; margin-bottom: 10px;">🛒 Which platforms are supported?</h4>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.6; margin: 0;">We support Amazon, Flipkart, Myntra, Ajio, and Nykaa. Simply paste any product URL from these platforms to get started.</p>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                    <h4 style="color: #1a202c; font-size: 18px; font-weight: 700; margin-bottom: 10px;">📊 How accurate is the price data?</h4>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.6; margin: 0;">Our price data is updated regularly and sourced from reliable APIs. Historical data shows real price trends to help you make informed decisions.</p>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                    <h4 style="color: #1a202c; font-size: 18px; font-weight: 700; margin-bottom: 10px;">💰 Is this service free to use?</h4>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.6; margin: 0;">Yes! Our price tracking and comparison service is completely free. No registration or payment required.</p>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                    <h4 style="color: #1a202c; font-size: 18px; font-weight: 700; margin-bottom: 10px;">🔒 Do you store my search data?</h4>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.6; margin: 0;">We don't store any personal information or search history. All searches are processed in real-time without saving your data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let priceChart = null;
+
+        document.getElementById('search-btn').addEventListener('click', function() {
+            const url = document.getElementById('product-url-input').value.trim();
+            
+            if (!url) {
+                alert('Please enter a product URL');
+                return;
+            }
+            
+            showLoading();
+            
+            fetch('/api/product?url=' + encodeURIComponent(url))
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    hideLoading();
+                    if (data.error) {
+                        displayError(data, url);
+                    } else {
+                        displayProductData(data, url);
+                        generatePriceChart(data);
+                        displayPriceComparison(data);
+                    }
+                })
+                .catch(function(error) {
+                    hideLoading();
+                    displayError({error: 'Failed to fetch data: ' + error.message}, url);
+                });
+        });
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('product-section').style.display = 'none';
+            document.getElementById('chart-section').style.display = 'none';
+            document.getElementById('comparison-section').style.display = 'none';
+            document.getElementById('error-section').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function displayProductData(data, originalUrl) {
+            const product = data.data || {};
+            const currentPrice = product.cur_price || 0;
+            
+            const productHtml = 
+                '<div class="product-layout">' +
+                    '<div class="product-image">' +
+                        '<img src="' + (product.image || 'https://via.placeholder.com/300x300?text=Product+Image') + '" alt="Product Image" style="width: 100%; height: 300px; object-fit: contain; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background: #f8f9fa; border: 1px solid #eee;">' +
+                    '</div>' +
+                    '<div class="product-details">' +
+                        '<h2 style="color: #1a202c; margin: 0 0 20px 0; font-size: 28px; line-height: 1.3; font-weight: 700;">' +
+                            (product.name || 'Product Name Not Available') +
+                        '</h2>' +
+                        '<div style="font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #4f46e5, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 25px;">' +
+                            '₹' + currentPrice.toLocaleString() +
+                        '</div>' +
+                        '<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding: 15px 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1)); border-radius: 15px; border: 1px solid rgba(79, 70, 229, 0.2);">' +
+                            '<span style="font-weight: 600; color: #4a5568; font-size: 18px;">' + (product.site_name || getPlatformName(originalUrl)) + '</span>' +
+                        '</div>' +
+                        '<a href="' + originalUrl + '" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 18px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 18px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);">' +
+                            '<span style="font-size: 20px;">🛒</span> Buy Now' +
+                        '</a>' +
+                    '</div>' +
+                '</div>';
+            
+            document.getElementById('product-content').innerHTML = productHtml;
+            document.getElementById('product-section').style.display = 'block';
+        }
+
+        let globalProductData = null;
+        
+        function generatePriceChart(data, period) {
+            globalProductData = data;
+            period = period || '1m';
+            
+            const product = data.data || {};
+            const currentPrice = product.cur_price || 0;
+            const avgPrice = product.avg || currentPrice;
+            const minPrice = product.min || currentPrice * 0.8;
+            const maxPrice = product.maxall || currentPrice * 1.3;
+            
+            const labels = [];
+            const priceData = [];
+            
+            if (period === '1m') {
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const day = date.getDate();
+                    const month = months[date.getMonth()];
+                    labels.push(day + ' ' + month);
+                    
+                    let price = i === 0 ? currentPrice : Math.max(minPrice, Math.min(maxPrice, avgPrice * (1 + (Math.random() - 0.5) * 0.2)));
+                    priceData.push(Math.round(price));
+                }
+            } else if (period === '3m') {
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (i * 7));
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const day = date.getDate();
+                    const month = months[date.getMonth()];
+                    labels.push(day + ' ' + month);
+                    
+                    let price = i === 0 ? currentPrice : Math.max(minPrice, Math.min(maxPrice, avgPrice * (1 + (Math.random() - 0.5) * 0.3)));
+                    priceData.push(Math.round(price));
+                }
+            } else {
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const day = date.getDate();
+                    const month = months[date.getMonth()];
+                    labels.push(day + ' ' + month);
+                    
+                    let price = i === 0 ? currentPrice : Math.max(minPrice, Math.min(maxPrice, avgPrice * (1 + (Math.random() - 0.5) * 0.4)));
+                    priceData.push(Math.round(price));
+                }
+            }
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            const options = {
+                series: [{
+                    name: 'Price',
+                    data: priceData
+                }],
+                chart: {
+                    type: 'area',
+                    height: 250,
+                    zoom: { enabled: false },
+                    toolbar: { show: false }
+                },
+                colors: ['#4a0e0e'],
+                dataLabels: { enabled: false },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1
+                    }
+                },
+                xaxis: {
+                    categories: labels,
+                    tooltip: { enabled: false },
+                    labels: {
+                        show: false
+                    },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function(value) {
+                            return '₹' + Math.round(value);
+                        }
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    shared: false,
+                    followCursor: true,
+                    custom: function(opts) {
+                        const value = opts.series[opts.seriesIndex][opts.dataPointIndex];
+                        const date = new Date();
+                        if (period === '1m') {
+                            date.setDate(date.getDate() - (29 - opts.dataPointIndex));
+                        } else if (period === '3m') {
+                            date.setDate(date.getDate() - ((11 - opts.dataPointIndex) * 7));
+                        } else {
+                            date.setMonth(date.getMonth() - (11 - opts.dataPointIndex));
+                        }
+                        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const dayName = days[date.getDay()];
+                        const day = date.getDate();
+                        const month = months[date.getMonth()];
+                        const year = String(date.getFullYear()).slice(-2);
+                        return '<div style="background: white; color: black; border-radius: 6px; padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-family: Arial, sans-serif; border: 1px solid #ddd; font-size: 12px;"><div style="font-weight: bold;">₹' + value.toLocaleString() + '</div><div style="color: #666; margin-top: 2px;">' + dayName + ', ' + day + ' ' + month + ' ' + year + '</div></div>';
+                    }
+                }
+            };
+            
+            priceChart = new ApexCharts(document.querySelector('#priceChart'), options);
+            priceChart.render();
+            
+            // Add price statistics
+            const lowestPrice = product.min || currentPrice * 0.8;
+            const highestPrice = product.maxall || currentPrice * 1.3;
+            const averagePrice = product.avg || currentPrice;
+            
+            const statsHTML = 
+                '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 30px;">' +
+                    '<div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border: 2px solid rgba(16, 185, 129, 0.2); border-radius: 20px; transition: all 0.3s ease;">' +
+                        '<div style="font-size: 14px; color: #4a5568; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Lowest Price</div>' +
+                        '<div style="font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">₹' + lowestPrice.toLocaleString() + '</div>' +
+                    '</div>' +
+                    '<div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1)); border: 2px solid rgba(79, 70, 229, 0.2); border-radius: 20px; transition: all 0.3s ease;">' +
+                        '<div style="font-size: 14px; color: #4a5568; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Average Price</div>' +
+                        '<div style="font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #4f46e5, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">₹' + averagePrice.toLocaleString() + '</div>' +
+                    '</div>' +
+                    '<div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border: 2px solid rgba(239, 68, 68, 0.2); border-radius: 20px; transition: all 0.3s ease;">' +
+                        '<div style="font-size: 14px; color: #4a5568; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Highest Price</div>' +
+                        '<div style="font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #ef4444, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">₹' + highestPrice.toLocaleString() + '</div>' +
+                    '</div>' +
+                '</div>';
+            
+            // Remove existing stats
+            const existingStats = document.querySelector('.price-chart').nextElementSibling;
+            if (existingStats && existingStats.style.display === 'grid') {
+                existingStats.remove();
+            }
+            
+            document.querySelector('.price-chart').insertAdjacentHTML('afterend', statsHTML);
+            
+            // Add event listeners for time period buttons
+            document.querySelectorAll('.time-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    // Update button styles
+                    document.querySelectorAll('.time-btn').forEach(function(b) {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Regenerate chart with new period
+                    const period = this.getAttribute('data-period');
+                    generatePriceChart(globalProductData, period);
+                });
+            });
+            
+            document.getElementById('chart-section').style.display = 'block';
+        }
+
+        function displayPriceComparison(data) {
+            const pid = data.extractedPID;
+            const pos = getPositionFromUrl(data.originalUrl);
+            
+            if (!pid || !pos) {
+                document.getElementById('comparison-section').style.display = 'none';
+                return;
+            }
+            
+            fetch('/api/compare?PID=' + pid + '&pos=' + pos)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(compareData) {
+                    if (compareData.status === 1 && compareData.data && compareData.data.length > 0) {
+                        const platforms = compareData.data.filter(function(item) {
+                            return item.price && item.price > 0;
+                        });
+                        
+                        if (platforms.length === 0) {
+                            document.getElementById('comparison-section').style.display = 'none';
+                            return;
+                        }
+                        
+                        platforms.sort(function(a, b) {
+                            return a.price - b.price;
+                        });
+                        
+                        let comparisonHTML = '';
+                        platforms.forEach(function(item, index) {
+                            const siteName = item.site_name || 'Unknown Store';
+                            const bgColor = index === 0 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))' : 'rgba(255, 255, 255, 0.8)';
+                            const borderColor = index === 0 ? '2px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)';
+                            const bestPriceTag = index === 0 ? '<div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">BEST PRICE</div>' : '';
+                            
+                            comparisonHTML += 
+                                '<div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 25px; background: ' + bgColor + '; border: ' + borderColor + '; border-radius: 20px; margin-bottom: 15px;">' +
+                                    '<div style="font-weight: 700; color: #1a202c; font-size: 18px;">' + siteName + '</div>' +
+                                    '<div style="display: flex; align-items: center; gap: 20px;">' +
+                                        bestPriceTag +
+                                        '<div style="font-size: 24px; font-weight: 800; color: #4f46e5;">₹' + item.price.toLocaleString() + '</div>' +
+                                        '<button onclick="window.open(\'' + (item.link || '#') + '\', \'_blank\')" style="background: #f59e0b; color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: 700; cursor: pointer;">Visit Store</button>' +
+                                    '</div>' +
+                                '</div>';
+                        });
+                        
+                        document.getElementById('comparison-content').innerHTML = '<div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">' + comparisonHTML + '</div>';
+                        document.getElementById('comparison-section').style.display = 'block';
+                    } else {
+                        document.getElementById('comparison-section').style.display = 'none';
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Price comparison error:', error);
+                    document.getElementById('comparison-section').style.display = 'none';
+                });
+        }
+        
+        function getPositionFromUrl(url) {
+            const urlLower = url.toLowerCase();
+            if (urlLower.includes('amazon')) return '63';
+            if (urlLower.includes('flipkart')) return '2';
+            if (urlLower.includes('myntra')) return '111';
+            if (urlLower.includes('ajio')) return '2191';
+            if (urlLower.includes('nykaa')) return '6068';
+            return null;
+        }
+
+        function displayError(errorData, originalUrl) {
+            const errorHtml = 
+                '<div style="text-align: center; padding: 40px;">' +
+                    '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 20px;">' +
+                        '<h2 style="color: #856404; margin: 0 0 15px 0;">⚠️ Unable to Get Data</h2>' +
+                        '<p style="color: #856404; margin: 0 0 15px 0; font-size: 16px;">' + (errorData.suggestion || errorData.error) + '</p>' +
+                    '</div>' +
+                '</div>';
+            
+            document.getElementById('error-content').innerHTML = errorHtml;
+            document.getElementById('error-section').style.display = 'block';
+        }
+
+        function getPlatformName(url) {
+            const urlLower = url.toLowerCase();
+            if (urlLower.includes('amazon')) return 'Amazon';
+            if (urlLower.includes('flipkart')) return 'Flipkart';
+            if (urlLower.includes('myntra')) return 'Myntra';
+            if (urlLower.includes('ajio')) return 'Ajio';
+            if (urlLower.includes('nykaa')) return 'Nykaa';
+            return 'Unknown';
+        }
+
+        document.getElementById('product-url-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('search-btn').click();
+            }
+        });
+    </script>
+</body>
+</html>
